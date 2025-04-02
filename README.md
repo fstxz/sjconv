@@ -17,7 +17,7 @@ Options:
 
 Install [rustup](https://rustup.rs/) if you haven't already, then execute the following commands:
 
-```sh
+```
 git clone https://github.com/fstxz/sjconv.git
 cd sjconv
 cargo build --release
