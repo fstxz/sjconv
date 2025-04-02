@@ -33,4 +33,4 @@ The `sjconv` binary will be placed in the `./target/release/` directory.
 
 ## License
 
-This program is licenced under the [MIT License](https://github.com/fstxz/sjconv/LICENSE.txt).
+This program is licenced under the [MIT License](https://github.com/fstxz/sjconv/blob/master/LICENSE.txt).
