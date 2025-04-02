@@ -1,6 +1,6 @@
 # sjconv
 
-A simple convolver plugin for JACK. It uses [fft-convolver](https://github.com/neodsp/fft-convolver) internally.
+A simple standalone convolver for JACK. It uses [fft-convolver](https://github.com/neodsp/fft-convolver) internally.
 
 ## Usage
 ```
