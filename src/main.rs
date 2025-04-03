@@ -106,7 +106,7 @@ fn main() -> ExitCode {
         move |_, _, _| jack::Control::Continue,
     );
 
-    let Ok(active_client) = client
+    let Ok(_) = client
         .activate_async((), process_handler)
         .map_err(|e| eprintln!("Couldn't activate the client: {e}"))
     else {
@@ -114,12 +114,8 @@ fn main() -> ExitCode {
     };
 
     println!("Started");
-    std::thread::park();
 
-    if let Err(err) = active_client.deactivate() {
-        eprintln!("JACK exited with error: {err}");
-        return ExitCode::FAILURE;
-    };
-
-    ExitCode::SUCCESS
+    loop {
+        std::thread::park();
+    }
 }
