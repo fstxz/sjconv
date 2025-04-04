@@ -106,7 +106,7 @@ fn main() -> ExitCode {
         move |_, _, _| jack::Control::Continue,
     );
 
-    let Ok(_) = client
+    let Ok(_active_client) = client
         .activate_async((), process_handler)
         .map_err(|e| eprintln!("Couldn't activate the client: {e}"))
     else {
