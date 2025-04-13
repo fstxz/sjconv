@@ -2,6 +2,7 @@ use std::process::ExitCode;
 
 use clap::Parser;
 use fft_convolver::FFTConvolver;
+use jack::NotificationHandler;
 
 const CLIENT_NAME: &str = "sjconv";
 
@@ -21,6 +22,15 @@ struct State {
     inputs: Vec<jack::Port<jack::AudioIn>>,
     outputs: Vec<jack::Port<jack::AudioOut>>,
     convolvers: Vec<FFTConvolver<f32>>,
+}
+
+struct Notifications;
+
+impl NotificationHandler for Notifications {
+    unsafe fn shutdown(&mut self, _status: jack::ClientStatus, _reason: &str) {
+        // TODO: exit more gracefully once https://github.com/RustAudio/rust-jack/issues/219 is resolved
+        std::process::exit(0)
+    }
 }
 
 fn main() -> ExitCode {
@@ -107,7 +117,7 @@ fn main() -> ExitCode {
     );
 
     let Ok(_active_client) = client
-        .activate_async((), process_handler)
+        .activate_async(Notifications, process_handler)
         .map_err(|e| eprintln!("Couldn't activate the client: {e}"))
     else {
         return ExitCode::FAILURE;
