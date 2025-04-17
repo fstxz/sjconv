@@ -29,7 +29,6 @@ The `sjconv` binary will be placed in the `./target/release/` directory.
 
 * Only mono impulse responses are supported
 * Sample rate of the inpulse response must match the sample rate of the JACK server
-* If you change sample rate or buffer size of the JACK server, you will have to restart `sjconv`
 
 ## License
 
