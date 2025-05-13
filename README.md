@@ -4,13 +4,12 @@ A simple standalone convolver for JACK. It uses [fft-convolver](https://github.c
 
 ## Usage
 ```
-sjconv [OPTIONS] --file <file.wav>
+sjconv -f <file> [-p <ports>]
 
 Options:
-  -f, --file <file.wav>  Path to the impulse response
-  -p, --ports <PORTS>    Number of input/output channels [default: 2]
-  -h, --help             Print help
-  -V, --version          Print version
+  -f, --file        path to the impulse response
+  -p, --ports       number of input/output channels (default: 2)
+  --help, help      display usage information
 ```
 
 ## Building from source

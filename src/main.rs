@@ -1,20 +1,20 @@
 use std::process::ExitCode;
 
-use clap::Parser;
+use argh::FromArgs;
 use fft_convolver::FFTConvolver;
 use jack::NotificationHandler;
 
 const CLIENT_NAME: &str = "sjconv";
 
-#[derive(Parser)]
-#[command(version)]
+#[derive(FromArgs)]
+/// A simple standalone convolver for JACK.
 struct Args {
-    /// Path to the impulse response
-    #[arg(short, long, value_name = "file.wav")]
+    /// path to the impulse response
+    #[argh(option, short = 'f')]
     file: String,
 
-    /// Number of input/output channels
-    #[arg(short, long, default_value_t = 2)]
+    /// number of input/output channels (default: 2)
+    #[argh(option, short = 'p', default = "2")]
     ports: u32,
 }
 
@@ -34,7 +34,7 @@ impl NotificationHandler for Notifications {
 }
 
 fn main() -> ExitCode {
-    let args = Args::parse();
+    let args = argh::from_env::<Args>();
 
     if args.ports == 0 {
         eprintln!("Number of ports must be more than 0");

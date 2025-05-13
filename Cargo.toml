@@ -11,4 +11,4 @@ lto = "fat"
 jack = "0.13.2"
 fft-convolver = "0.2.0"
 hound = "3.5.1"
-clap = { version = "4.5.34", features = ["derive"] }
+argh = { version = "0.1", default-features = false, features = ["help"] }
