@@ -36,8 +36,8 @@ impl NotificationHandler for Notifications {
 fn main() -> ExitCode {
     let args = Args::parse();
 
-    let Ok(reader) =
-        hound::WavReader::open(args.file).map_err(|e| eprintln!("Couldn't open the file: {e}"))
+    let Ok(reader) = hound::WavReader::open(&args.file)
+        .map_err(|e| eprintln!("Couldn't load {}: {e}", args.file))
     else {
         return ExitCode::FAILURE;
     };
