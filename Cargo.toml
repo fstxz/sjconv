@@ -6,6 +6,7 @@ edition = "2024"
 [profile.release]
 codegen-units = 1
 lto = "fat"
+strip = true
 
 [dependencies]
 jack = "0.13.2"
