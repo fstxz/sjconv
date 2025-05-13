@@ -36,6 +36,11 @@ impl NotificationHandler for Notifications {
 fn main() -> ExitCode {
     let args = Args::parse();
 
+    if args.ports == 0 {
+        eprintln!("Number of ports must be more than 0");
+        return ExitCode::FAILURE;
+    }
+
     let Ok(reader) = hound::WavReader::open(&args.file)
         .map_err(|e| eprintln!("Couldn't load {}: {e}", args.file))
     else {
