@@ -1,4 +1,7 @@
-use std::process::ExitCode;
+use std::{
+    process::ExitCode,
+    sync::{Arc, Condvar, Mutex},
+};
 
 use argh::FromArgs;
 use fft_convolver::FFTConvolver;
@@ -24,12 +27,13 @@ struct State {
     convolvers: Vec<FFTConvolver<f32>>,
 }
 
-struct Notifications;
+struct Notifications(Arc<(Mutex<bool>, Condvar)>);
 
 impl NotificationHandler for Notifications {
     unsafe fn shutdown(&mut self, _status: jack::ClientStatus, _reason: &str) {
-        // TODO: exit more gracefully once https://github.com/RustAudio/rust-jack/issues/219 is resolved
-        std::process::exit(0)
+        let mut exit = self.0.0.lock().unwrap();
+        *exit = true;
+        self.0.1.notify_one();
     }
 }
 
@@ -121,8 +125,9 @@ fn main() -> ExitCode {
         move |_, _, _| jack::Control::Continue,
     );
 
+    let notification = Arc::new((Mutex::new(false), Condvar::new()));
     let Ok(_active_client) = client
-        .activate_async(Notifications, process_handler)
+        .activate_async(Notifications(notification.clone()), process_handler)
         .map_err(|e| eprintln!("Couldn't activate the client: {e}"))
     else {
         return ExitCode::FAILURE;
@@ -130,7 +135,11 @@ fn main() -> ExitCode {
 
     println!("Started");
 
-    loop {
-        std::thread::park();
+    let mut exit = notification.0.lock().unwrap();
+    while !*exit {
+        exit = notification.1.wait(exit).unwrap();
     }
+
+    println!("JACK has shutdown, exiting");
+    return ExitCode::SUCCESS;
 }
