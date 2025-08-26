@@ -1,7 +1,4 @@
-use std::{
-    process::ExitCode,
-    sync::{Arc, Condvar, Mutex},
-};
+use std::sync::{Arc, Condvar, Mutex};
 
 use argh::FromArgs;
 use fft_convolver::FFTConvolver;
@@ -37,26 +34,21 @@ impl NotificationHandler for Notifications {
     }
 }
 
-fn main() -> ExitCode {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = argh::from_env::<Args>();
 
     if args.ports == 0 {
-        eprintln!("Number of ports must be more than 0");
-        return ExitCode::FAILURE;
+        return Err("Number of ports must be more than 0".into());
     }
 
-    let Ok(reader) = hound::WavReader::open(&args.file)
-        .map_err(|e| eprintln!("Couldn't load {}: {e}", args.file))
-    else {
-        return ExitCode::FAILURE;
-    };
+    let reader = hound::WavReader::open(&args.file)
+        .map_err(|e| format!("Couldn't load {}: {e}", args.file))?;
 
     let spec = reader.spec();
     println!("File loaded: {:?}", spec);
 
     if spec.channels != 1 {
-        eprintln!("Impulse response must have only 1 channel");
-        return ExitCode::FAILURE;
+        return Err("Impulse response must have only 1 channel".into());
     }
 
     let samples = match spec.sample_format {
@@ -74,37 +66,34 @@ fn main() -> ExitCode {
         }
     };
 
-    let Ok((client, _)) = jack::Client::new(CLIENT_NAME, jack::ClientOptions::default())
-        .map_err(|e| eprintln!("Couldn't create JACK client: {e}"))
-    else {
-        return ExitCode::FAILURE;
-    };
+    let (client, _) = jack::Client::new(CLIENT_NAME, jack::ClientOptions::default())
+        .map_err(|e| format!("Couldn't create JACK client: {e}"))?;
 
     if spec.sample_rate as usize != client.sample_rate() {
-        eprintln!(
+        return Err(
             "Sample rate of the inpulse response must match the sample rate of the JACK server"
+                .into(),
         );
-        return ExitCode::FAILURE;
     }
 
     let (inputs, outputs, convolvers) = (1..=args.ports)
         .map(|i| {
             let input = client
                 .register_port(&format!("Input.{i}"), jack::AudioIn::default())
-                .unwrap();
+                .map_err(|e| format!("Couldn't register input port {i}: {e}"))?;
 
             let output = client
                 .register_port(&format!("Output.{i}"), jack::AudioOut::default())
-                .unwrap();
+                .map_err(|e| format!("Couldn't register output port {i}: {e}"))?;
 
             let mut convolver = FFTConvolver::default();
             convolver
                 .init(client.buffer_size() as usize, &samples)
-                .unwrap();
+                .map_err(|e| format!("Couldn't initialize convolver for port {i}: {e}"))?;
 
-            (input, output, convolver)
+            Ok((input, output, convolver))
         })
-        .collect::<(Vec<_>, Vec<_>, Vec<_>)>();
+        .collect::<Result<(Vec<_>, Vec<_>, Vec<_>), String>>()?;
 
     let process_handler = jack::contrib::ClosureProcessHandler::with_state(
         State {
@@ -126,12 +115,9 @@ fn main() -> ExitCode {
     );
 
     let notification = Arc::new((Mutex::new(false), Condvar::new()));
-    let Ok(_active_client) = client
+    let _active_client = client
         .activate_async(Notifications(notification.clone()), process_handler)
-        .map_err(|e| eprintln!("Couldn't activate the client: {e}"))
-    else {
-        return ExitCode::FAILURE;
-    };
+        .map_err(|e| format!("Couldn't activate the client: {e}"))?;
 
     println!("Started");
 
@@ -141,5 +127,5 @@ fn main() -> ExitCode {
     }
 
     println!("JACK has shutdown, exiting");
-    return ExitCode::SUCCESS;
+    Ok(())
 }
