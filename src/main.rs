@@ -99,14 +99,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let process_handler = jack::contrib::ClosureProcessHandler::with_state(
         State { channels },
-        |state, _, ps| -> jack::Control {
-            for (input, output, convolver) in &mut state.channels {
-                let _ = convolver.process(input.as_slice(ps), output.as_mut_slice(ps));
-            }
-
-            jack::Control::Continue
-        },
-        move |_, _, _| jack::Control::Continue,
+        process_callback,
+        buffer_callback,
     );
 
     let notification = Arc::new((Mutex::new(false), Condvar::new()));
@@ -123,4 +117,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("JACK has shutdown, exiting");
     Ok(())
+}
+
+fn process_callback(state: &mut State, _: &jack::Client, ps: &jack::ProcessScope) -> jack::Control {
+    for (input, output, convolver) in &mut state.channels {
+        let _ = convolver.process(input.as_slice(ps), output.as_mut_slice(ps));
+    }
+    jack::Control::Continue
+}
+
+fn buffer_callback(_: &mut State, _: &jack::Client, _: jack::Frames) -> jack::Control {
+    jack::Control::Continue
 }
