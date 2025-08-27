@@ -19,6 +19,7 @@ struct Args {
 }
 
 struct State {
+    ir: Vec<f32>,
     channels: Vec<(
         jack::Port<jack::AudioIn>,
         jack::Port<jack::AudioOut>,
@@ -88,17 +89,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .register_port(&format!("Output.{i}"), jack::AudioOut::default())
                 .map_err(|e| format!("Couldn't register output port {i}: {e}"))?;
 
-            let mut convolver = FFTConvolver::default();
-            convolver
-                .init(client.buffer_size() as usize, &samples)
-                .map_err(|e| format!("Couldn't initialize convolver for port {i}: {e}"))?;
+            let convolver = FFTConvolver::default();
 
             Ok((input, output, convolver))
         })
         .collect::<Result<Vec<_>, String>>()?;
 
     let process_handler = jack::contrib::ClosureProcessHandler::with_state(
-        State { channels },
+        State {
+            ir: samples,
+            channels,
+        },
         process_callback,
         buffer_callback,
     );
@@ -126,6 +127,11 @@ fn process_callback(state: &mut State, _: &jack::Client, ps: &jack::ProcessScope
     jack::Control::Continue
 }
 
-fn buffer_callback(_: &mut State, _: &jack::Client, _: jack::Frames) -> jack::Control {
+fn buffer_callback(state: &mut State, _: &jack::Client, frames: jack::Frames) -> jack::Control {
+    for (_, _, convolver) in &mut state.channels {
+        if convolver.init(frames as usize, &state.ir).is_err() {
+            return jack::Control::Quit;
+        }
+    }
     jack::Control::Continue
 }
