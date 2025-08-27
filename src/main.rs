@@ -19,9 +19,11 @@ struct Args {
 }
 
 struct State {
-    inputs: Vec<jack::Port<jack::AudioIn>>,
-    outputs: Vec<jack::Port<jack::AudioOut>>,
-    convolvers: Vec<FFTConvolver<f32>>,
+    channels: Vec<(
+        jack::Port<jack::AudioIn>,
+        jack::Port<jack::AudioOut>,
+        FFTConvolver<f32>,
+    )>,
 }
 
 struct Notifications(Arc<(Mutex<bool>, Condvar)>);
@@ -76,7 +78,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         );
     }
 
-    let (inputs, outputs, convolvers) = (1..=args.ports)
+    let channels = (1..=args.ports)
         .map(|i| {
             let input = client
                 .register_port(&format!("Input.{i}"), jack::AudioIn::default())
@@ -93,20 +95,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
             Ok((input, output, convolver))
         })
-        .collect::<Result<(Vec<_>, Vec<_>, Vec<_>), String>>()?;
+        .collect::<Result<Vec<_>, String>>()?;
 
     let process_handler = jack::contrib::ClosureProcessHandler::with_state(
-        State {
-            inputs,
-            outputs,
-            convolvers,
-        },
+        State { channels },
         |state, _, ps| -> jack::Control {
-            for ((input, output), convolver) in std::iter::zip(&state.inputs, &mut state.outputs)
-                .map(|(i, o)| (i.as_slice(ps), o.as_mut_slice(ps)))
-                .zip(&mut state.convolvers)
-            {
-                let _ = convolver.process(input, output);
+            for (input, output, convolver) in &mut state.channels {
+                let _ = convolver.process(input.as_slice(ps), output.as_mut_slice(ps));
             }
 
             jack::Control::Continue
