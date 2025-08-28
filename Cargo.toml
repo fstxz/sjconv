@@ -2,6 +2,12 @@
 name = "sjconv"
 version = "0.3.0"
 edition = "2024"
+description = "A simple standalone convolver for JACK"
+license = "MIT"
+readme = "README.md"
+repository = "https://github.com/fstxz/sjconv"
+keywords = ["jack", "convolver", "audio", "convolution"]
+categories = ["command-line-utilities", "multimedia::audio"]
 
 [profile.release]
 codegen-units = 1
