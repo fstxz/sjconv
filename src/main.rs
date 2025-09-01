@@ -61,10 +61,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
         hound::SampleFormat::Int => {
             let sample_reader = reader.into_samples::<i32>();
+            let divisor = (1u32 << (spec.bits_per_sample as u32 - 1)) as f64;
             sample_reader
-                .map(|s| {
-                    (s.unwrap() as f64 / (2u32.pow(spec.bits_per_sample as u32 - 1)) as f64) as f32
-                })
+                .map(|s| (s.unwrap() as f64 / divisor) as f32)
                 .collect::<Vec<_>>()
         }
     };
