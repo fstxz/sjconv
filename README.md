@@ -18,6 +18,9 @@ Binaries for Linux are available in [releases](https://github.com/fstxz/sjconv/r
 
 ## Building from source
 
+Install build dependencies:
+- On Debian-based systems: `apt install libjack-jackd2-dev`
+
 Install [rustup](https://rustup.rs/) if you haven't already, then execute the following commands:
 
 ```sh
