@@ -12,6 +12,10 @@ Options:
   --help, help      display usage information
 ```
 
+## Installing
+
+Binaries for Linux are available in [releases](https://github.com/fstxz/sjconv/releases).
+
 ## Building from source
 
 Install [rustup](https://rustup.rs/) if you haven't already, then execute the following commands:
@@ -23,6 +27,12 @@ cargo build --release
 ```
 
 The `sjconv` binary will be placed in the `./target/release/` directory.
+
+Alternatively, you can install it with Cargo:
+
+```sh
+cargo install sjconv
+```
 
 ## Limitations/assumptions
 
