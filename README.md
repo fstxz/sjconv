@@ -14,7 +14,7 @@ Options:
 
 ## Installing
 
-Binaries for Linux are available in [releases](https://github.com/fstxz/sjconv/releases).
+Binaries for Linux and Windows are available in [releases](https://github.com/fstxz/sjconv/releases).
 
 ## Building from source
 
