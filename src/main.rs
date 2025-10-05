@@ -6,8 +6,8 @@ use jack::NotificationHandler;
 
 const CLIENT_NAME: &str = "sjconv";
 
-#[derive(FromArgs)]
 /// A simple standalone convolver for JACK.
+#[derive(FromArgs)]
 struct Args {
     /// path to the impulse response
     #[argh(option, short = 'f')]
@@ -19,12 +19,14 @@ struct Args {
 }
 
 struct State {
-    ir: Vec<f32>,
-    channels: Vec<(
-        jack::Port<jack::AudioIn>,
-        jack::Port<jack::AudioOut>,
-        FFTConvolver<f32>,
-    )>,
+    ir: Box<[f32]>,
+    channels: Box<[ChannelState]>,
+}
+
+struct ChannelState {
+    input: jack::Port<jack::AudioIn>,
+    output: jack::Port<jack::AudioOut>,
+    convolver: FFTConvolver<f32>,
 }
 
 struct Notifications(Arc<(Mutex<bool>, Condvar)>);
@@ -57,14 +59,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let samples = match spec.sample_format {
         hound::SampleFormat::Float => {
             let sample_reader = reader.into_samples::<f32>();
-            sample_reader.map(|s| s.unwrap()).collect::<Vec<_>>()
+            sample_reader.map(|s| s.unwrap()).collect()
         }
         hound::SampleFormat::Int => {
             let sample_reader = reader.into_samples::<i32>();
             let divisor = (1u32 << (spec.bits_per_sample as u32 - 1)) as f64;
             sample_reader
                 .map(|s| (s.unwrap() as f64 / divisor) as f32)
-                .collect::<Vec<_>>()
+                .collect()
         }
     };
 
@@ -90,9 +92,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
             let convolver = FFTConvolver::default();
 
-            Ok((input, output, convolver))
+            Ok(ChannelState {
+                input,
+                output,
+                convolver,
+            })
         })
-        .collect::<Result<Vec<_>, String>>()?;
+        .collect::<Result<_, String>>()?;
 
     let process_handler = jack::contrib::ClosureProcessHandler::with_state(
         State {
@@ -120,15 +126,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 fn process_callback(state: &mut State, _: &jack::Client, ps: &jack::ProcessScope) -> jack::Control {
-    for (input, output, convolver) in &mut state.channels {
-        let _ = convolver.process(input.as_slice(ps), output.as_mut_slice(ps));
+    for channel in &mut state.channels {
+        let _ = channel
+            .convolver
+            .process(channel.input.as_slice(ps), channel.output.as_mut_slice(ps));
     }
     jack::Control::Continue
 }
 
 fn buffer_callback(state: &mut State, _: &jack::Client, frames: jack::Frames) -> jack::Control {
-    for (_, _, convolver) in &mut state.channels {
-        if convolver.init(frames as usize, &state.ir).is_err() {
+    for channel in &mut state.channels {
+        if let Err(e) = channel.convolver.init(frames as usize, &state.ir) {
+            eprintln!("Couldn't initialize convolver: {e}");
             return jack::Control::Quit;
         }
     }
