@@ -16,6 +16,8 @@ Options:
 
 Binaries for Linux and Windows are available in [releases](https://github.com/fstxz/sjconv/releases).
 
+- Arch Linux (AUR): [sjconv-bin](https://aur.archlinux.org/packages/sjconv-bin)
+
 ## Building from source
 
 Install build dependencies:
