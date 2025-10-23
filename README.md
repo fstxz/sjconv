@@ -3,7 +3,7 @@
 A simple standalone convolver for JACK. It uses [fft-convolver](https://github.com/neodsp/fft-convolver) for convolution.
 
 ## Usage
-```
+```sh
 sjconv -f <file> [-p <ports>]
 
 Options:
@@ -16,6 +16,7 @@ Options:
 
 Binaries for Linux and Windows are available in [releases](https://github.com/fstxz/sjconv/releases).
 
+Other methods:
 - Arch Linux (AUR): [sjconv-bin](https://aur.archlinux.org/packages/sjconv-bin)
 
 ## Building from source
