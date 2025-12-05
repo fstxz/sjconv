@@ -47,4 +47,4 @@ cargo install sjconv
 
 ## License
 
-This program is licenced under the [MIT License](https://github.com/fstxz/sjconv/blob/master/LICENSE.txt).
+This program is licenced under the [MIT License](LICENSE.txt).
