@@ -73,7 +73,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let (client, _) = jack::Client::new(CLIENT_NAME, jack::ClientOptions::default())
         .map_err(|e| format!("Couldn't create JACK client: {e}"))?;
 
-    if spec.sample_rate as usize != client.sample_rate() {
+    if spec.sample_rate != client.sample_rate() {
         return Err(
             "Sample rate of the inpulse response must match the sample rate of the JACK server"
                 .into(),
