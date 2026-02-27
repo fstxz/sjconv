@@ -264,6 +264,7 @@ dependencies = [
  "fft-convolver",
  "hound",
  "jack",
+ "log",
 ]
 
 [[package]]

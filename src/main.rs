@@ -1,4 +1,7 @@
-use std::sync::{Arc, Condvar, Mutex};
+use std::{
+    process::ExitCode,
+    sync::{Arc, Condvar, Mutex},
+};
 
 use argh::FromArgs;
 use fft_convolver::FFTConvolver;
@@ -39,8 +42,24 @@ impl NotificationHandler for Notifications {
     }
 }
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+fn main() -> ExitCode {
+    match run() {
+        Err(e) => {
+            log::error!("{e}");
+            ExitCode::FAILURE
+        }
+        _ => ExitCode::SUCCESS,
+    }
+}
+
+fn run() -> Result<(), Box<dyn std::error::Error>> {
+    log::set_logger(Box::leak(Box::new(Logger)))
+        .map_err(|e| format!("Failed to set logger: {e}"))?;
+    log::set_max_level(log::LevelFilter::Trace);
+
     let args = argh::from_env::<Args>();
+
+    log::info!("sjconv v{}", env!("CARGO_PKG_VERSION"));
 
     if args.ports == 0 {
         return Err("Number of ports must be more than 0".into());
@@ -50,7 +69,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .map_err(|e| format!("Couldn't load {}: {e}", args.file))?;
 
     let spec = reader.spec();
-    println!("File loaded: {:?}", spec);
 
     if spec.channels != 1 {
         return Err("Impulse response must have only 1 channel".into());
@@ -114,14 +132,25 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .activate_async(Notifications(notification.clone()), process_handler)
         .map_err(|e| format!("Couldn't activate the client: {e}"))?;
 
-    println!("Started");
+    log::info!(
+        "Loaded impulse response: \
+        \n\tSample rate: {} \
+        \n\tSample format: {:?} \
+        \n\tBits per sample: {} \
+        \n\tChannels: {}",
+        spec.sample_rate,
+        spec.sample_format,
+        spec.bits_per_sample,
+        spec.channels
+    );
+    log::info!("Processing started");
 
     let mut exit = notification.0.lock().unwrap();
     while !*exit {
         exit = notification.1.wait(exit).unwrap();
     }
 
-    println!("JACK has shutdown, exiting");
+    log::info!("JACK has shutdown, exiting");
     Ok(())
 }
 
@@ -137,9 +166,26 @@ fn process_callback(state: &mut State, _: &jack::Client, ps: &jack::ProcessScope
 fn buffer_callback(state: &mut State, _: &jack::Client, frames: jack::Frames) -> jack::Control {
     for channel in &mut state.channels {
         if let Err(e) = channel.convolver.init(frames as usize, &state.ir) {
-            eprintln!("Couldn't initialize convolver: {e}");
+            log::error!("Couldn't initialize convolver: {e}");
             return jack::Control::Quit;
         }
     }
     jack::Control::Continue
+}
+
+struct Logger;
+
+impl log::Log for Logger {
+    fn enabled(&self, _metadata: &log::Metadata) -> bool {
+        true
+    }
+
+    fn log(&self, record: &log::Record) {
+        match record.level() {
+            log::Level::Error => eprintln!("[{}] {}", record.level(), record.args()),
+            _ => println!("[{}] {}", record.level(), record.args()),
+        }
+    }
+
+    fn flush(&self) {}
 }

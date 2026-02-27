@@ -19,3 +19,4 @@ jack = "0.13.2"
 fft-convolver = "0.2.0"
 hound = "3.5.1"
 argh = { version = "0.1", default-features = false, features = ["help"] }
+log = "0.4"
