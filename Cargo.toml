@@ -15,8 +15,11 @@ lto = "fat"
 strip = true
 
 [dependencies]
-jack = "0.13.2"
+jack = { version = "0.13.2", default-features = false }
 fft-convolver = "0.2.0"
 hound = "3.5.1"
 argh = { version = "0.1", default-features = false, features = ["help"] }
 log = "0.4"
+
+[features]
+dynamic_loading = ["jack/dynamic_loading"]
