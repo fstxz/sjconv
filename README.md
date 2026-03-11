@@ -1,6 +1,6 @@
 # sjconv
 
-A simple standalone convolver for JACK. It uses [fft-convolver](https://github.com/neodsp/fft-convolver) for convolution.
+A simple command-line convolver for JACK. It uses [fft-convolver](https://github.com/neodsp/fft-convolver) for convolution.
 
 ## Usage
 ```sh
